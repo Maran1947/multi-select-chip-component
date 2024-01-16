@@ -89,10 +89,6 @@ function MultiSelectChipComponent({ data }: MultiSelectChipComponentPropsType) {
         setActiveSuggestion(-1);
     }
 
-    const handleBlur = () => {
-        setShowUsers(false);
-    };
-
     useEffect(() => {
         if (inputText === '') {
             setUserList(allUsers);
@@ -122,7 +118,6 @@ function MultiSelectChipComponent({ data }: MultiSelectChipComponentPropsType) {
                         onChange={handleInputText}
                         autoFocus={true}
                         onKeyDown={handleOnKeyDown}
-                        onBlur={handleBlur}
                         type="text"
                         name="inputText"
                         id="inputTextId"
@@ -132,7 +127,7 @@ function MultiSelectChipComponent({ data }: MultiSelectChipComponentPropsType) {
                         showUsers &&
                         <div
                             onMouseOver={handleOnMouseOver}
-                            className="user-list-dropdown absolute w-[530px] z-10 bg-white max-h-80 shadow-2xl scroll-auto overflow-y-auto rounded-tl-2xl"
+                            className="user-list-dropdown absolute w-[530px] z-10 bg-white max-h-80 shadow-[5px_8px_10px_1px_rgba(0,0,0,0.3)] scroll-auto overflow-y-auto rounded-tl-2xl rounded-b"
                         >
                             {
                                 userList.length > 0 ?
