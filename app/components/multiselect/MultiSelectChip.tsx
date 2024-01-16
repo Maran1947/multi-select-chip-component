@@ -89,6 +89,10 @@ function MultiSelectChipComponent({ data }: MultiSelectChipComponentPropsType) {
         setActiveSuggestion(-1);
     }
 
+    const handleBlur = () => {
+        setShowUsers(false);
+    };
+
     useEffect(() => {
         if (inputText === '') {
             setUserList(allUsers);
@@ -118,6 +122,7 @@ function MultiSelectChipComponent({ data }: MultiSelectChipComponentPropsType) {
                         onChange={handleInputText}
                         autoFocus={true}
                         onKeyDown={handleOnKeyDown}
+                        onBlur={handleBlur}
                         type="text"
                         name="inputText"
                         id="inputTextId"
