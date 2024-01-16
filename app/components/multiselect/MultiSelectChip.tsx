@@ -1,31 +1,25 @@
-import Image from 'next/image';
+import { MultiSelectChipComponentPropsType, UserType } from '@/app/utils/types';
 import React, { useEffect, useState } from 'react';
+import Chip from './Chip';
+import ChipWithEmail from './ChipWithEmail';
 
-interface MultiSelectChipComponentProps {
-    data: any
-}
+function MultiSelectChipComponent({ data }: MultiSelectChipComponentPropsType) {
 
-interface UserType {
-    name: string,
-    email: string,
-    picUrl: string
-}
-
-function MultiSelectChipComponent({
-    data
-}: MultiSelectChipComponentProps) {
     const [showUsers, setShowUsers] = useState<boolean>(false);
     const [highlightLastUser, setHighlightLastUser] = useState<boolean>(false);
     const [inputText, setInputText] = useState<string>('');
     const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
     const [allUsers, setAllUsers] = useState<UserType[]>(data);
     const [userList, setUserList] = useState<UserType[]>(data);
+    const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
 
     const handleInputText = (e: React.FormEvent<HTMLInputElement>) => {
         const query = e.currentTarget.value;
         let searchUsers = allUsers.filter((user) => {
-            return user.name.startsWith(query);
+            return user.name.toLowerCase().startsWith(query.toLowerCase());
         });
+
+        setActiveSuggestion(0);
         setInputText(e.currentTarget.value);
         setUserList(searchUsers);
     }
@@ -35,9 +29,11 @@ function MultiSelectChipComponent({
             return user.email != newUser.email
         });
         let filteredUsers: UserType[] = [...selectedUsers, newUser];
+
         setSelectedUsers(filteredUsers);
         setAllUsers(newUsers);
         setInputText('');
+        setActiveSuggestion(-1);
     }
 
     const handleRemoveSelectedUser = (existingUser: UserType) => {
@@ -45,12 +41,13 @@ function MultiSelectChipComponent({
             return user.email != existingUser.email
         });
         let newUsers = [...allUsers, existingUser];
+
         setAllUsers(newUsers);
         setSelectedUsers(filteredUsers);
     }
 
     const handleShowUsers = (e: any) => {
-        if (e.keyCode === 8 && inputText.length === 0 && selectedUsers.length > 0) {
+        if (e.key === "Backspace" && inputText.length === 0 && selectedUsers.length > 0) {
             setShowUsers(false);
             if (highlightLastUser) {
                 let filteredUsers = [...selectedUsers];
@@ -70,6 +67,28 @@ function MultiSelectChipComponent({
         }
     }
 
+    const handleOnKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && activeSuggestion !== -1) {
+            handleSelectUser(userList[activeSuggestion]);
+        } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            const direction = e.key === 'ArrowUp' ? -1 : 1;
+            const newIndex = Math.max(0, Math.min(userList.length - 1, userList.findIndex((user, index) => index === activeSuggestion) + direction));
+            const highlightedUserElement = document.getElementById(`user-${newIndex}`);
+            if (highlightedUserElement) {
+                highlightedUserElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                });
+            }
+
+            setActiveSuggestion(newIndex);
+        }
+    }
+
+    const handleOnMouseOver = () => {
+        setActiveSuggestion(-1);
+    }
+
     useEffect(() => {
         if (inputText === '') {
             setUserList(allUsers);
@@ -82,34 +101,13 @@ function MultiSelectChipComponent({
                 {
                     selectedUsers?.map((user: UserType, index: any) => {
                         return (
-                            <div
+                            <Chip
                                 key={index}
-                                className={`flex items-center gap-2 rounded-full bg-[#cbcdd4] 
-                            ${(highlightLastUser && index === selectedUsers.length-1) && 'border-2 border-[#4e79ef]'}`} >
-                                <Image
-                                    width={38}
-                                    height={38}
-                                    className="flex-shrink-0 rounded-full"
-                                    src={user.picUrl}
-                                    alt="user photo" />
-                                <p>{user.name}</p>
-                                <svg
-                                    onClick={() => handleRemoveSelectedUser(user)}
-                                    className='mr-2  cursor-pointer'
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                            </div>
+                                index={index}
+                                highlightLastUser={highlightLastUser}
+                                lastIndex={selectedUsers.length - 1}
+                                user={user}
+                                handleRemoveSelectedUser={handleRemoveSelectedUser} />
                         )
                     })
                 }
@@ -119,6 +117,7 @@ function MultiSelectChipComponent({
                         onClick={handleShowUsers}
                         onChange={handleInputText}
                         autoFocus={true}
+                        onKeyDown={handleOnKeyDown}
                         type="text"
                         name="inputText"
                         id="inputTextId"
@@ -126,38 +125,24 @@ function MultiSelectChipComponent({
                         placeholder="Add new user..." />
                     {
                         showUsers &&
-                        <div className="absolute w-[500px] z-10 bg-white max-h-80 shadow-2xl scroll-auto overflow-y-auto" >
+                        <div
+                            onMouseOver={handleOnMouseOver}
+                            className="user-list-dropdown absolute w-[530px] z-10 bg-white max-h-80 shadow-2xl scroll-auto overflow-y-auto rounded-tl-2xl"
+                        >
                             {
                                 userList.length > 0 ?
                                     userList.map((user: UserType, index: any) => {
                                         return (
-                                            <div
-                                                onClick={() => handleSelectUser(user)}
-                                                key={user.email + index}
-                                                className="flex items-center gap-2 px-4 py-2 hover:bg-[#eae9ea] cursor-pointer"
-                                            >
-                                                <div className="w-[200px] flex items-center gap-4" >
-                                                    <Image
-                                                        width={38}
-                                                        height={38}
-                                                        className="flex-shrink-0 rounded-full"
-                                                        src={user.picUrl}
-                                                        alt="user photo" />
-                                                    <p className="font-semibold" >
-                                                        <span className="text-[#717071]" >
-                                                            {user.name.slice(0, inputText.length)}
-                                                        </span>
-                                                        {user.name.slice(inputText.length)}
-                                                    </p>
-                                                </div>
-                                                <div className="w-50 flex justify-end" >
-                                                    <p className="w-full text-left text-[#a6a5a6]" >{user.email}</p>
-                                                </div>
-                                            </div>
+                                            <ChipWithEmail
+                                                key={index}
+                                                index={index}
+                                                inputText={inputText}
+                                                activeSuggestion={activeSuggestion}
+                                                user={user}
+                                                handleSelectUser={handleSelectUser} />
                                         )
                                     })
-                                    :
-                                    <p className="p-2" >No user found.</p>
+                                    : <p className="p-2" >No user found.</p>
                             }
                         </div>
                     }
